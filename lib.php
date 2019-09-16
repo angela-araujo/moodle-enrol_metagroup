@@ -310,7 +310,14 @@ class enrol_metagroup_plugin extends enrol_plugin {
             $mform->freeze('customint1');
         }
 
-        $mform->addElement('select', 'customint2', get_string('addgroup', 'enrol_metagroup'), $groups);
+        $mform->addElement('group', 'customint2', get_string('linkedgroup', 'enrol_metagroup'), $options);
+        $mform->addRule('customint2', get_string('required'), 'required', null, 'client');
+        if (!empty($instance->id)) {
+            $mform->freeze('customint2');
+        }
+
+        $mform->addElement('select', 'customint3', get_string('addgroup', 'enrol_metagroup'), $groups);
+
     }
 
     /**
