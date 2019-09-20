@@ -36,17 +36,19 @@ class enrol_metagroup_handler {
     /**
      * Synchronise metagroup enrolments of this user in this course
      * @static
-     * @param int $courseid
+     * @param int $parentcourseid
+     * @param int $parentgroupid
+     * @param int $childgroupid
      * @param int $userid
      * @return void
      */
-    protected static function sync_course_instances($courseid, $userid) {
+    protected static function sync_course_instances($parentcourseid, $parentgroupid, $childgroupid, $userid) {
         global $DB;
 
         static $preventrecursion = false;
 
         // does anything want to sync with this parent?
-        if (!$enrols = $DB->get_records('enrol', array('customint1'=>$courseid, 'enrol'=>'metagroup'), 'id ASC')) {
+        if (!$enrols = $DB->get_records('enrol', array('customint1'=>$parentcourseid, 'customint2'=>$parentgroupid, 'customint3'=>$childgroupid, 'enrol'=>'metagroup'), 'id ASC')) {
             return;
         }
 

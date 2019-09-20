@@ -112,9 +112,10 @@ class enrol_metagroup_plugin extends enrol_plugin {
      * Add new instance of enrol plugin.
      * @param object $courseorigin
      * @param object $grouporigin instance fields
+     * @param object $groupdestiny instance fields
      * @return int id of last instance, null if can not be created
      */
-    public function add_instance($courseorigin, $grouporigin, $) {
+    public function add_instance($courseorigin, $grouporigin, $groupdestiny) {
         global $CFG;
 
         require_once("$CFG->dirroot/enrol/metagroup/locallib.php");
