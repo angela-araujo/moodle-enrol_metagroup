@@ -115,30 +115,19 @@ class enrol_metagroup_plugin extends enrol_plugin {
      * @param object $groupdestiny instance fields
      * @return int id of last instance, null if can not be created
      */
-    public function add_instance($courseorigin, $grouporigin, $groupdestiny) {
+    public function add_instance($course, array $fields = null) {
         global $CFG;
 
-        require_once("$CFG->dirroot/enrol/metagroup/locallib.php");
+        require_once("$CFG->dirroot/enrol/metagroup/locallib.php");        
+        
+        /*
+        $fields['customint1'] = $courseidparent;
+        $fields['customint2'] = $groupidparent;
+        $fields['customint3'] = $groupidchild;
+        */
+        $result = parent::add_instance($course, $fields);    
 
-        // Support creating multiple at once.
-        if (is_array($fields['customint1'])) {
-            $courses = array_unique($fields['customint1']);
-        } else {
-            $courses = array($fields['customint1']);
-        }
-        foreach ($courses as $courseid) {
-            if (!empty($fields['customint2']) && $fields['customint2'] == ENROL_METAGROUP_CREATE_GROUP) {
-                $context = context_course::instance($course->id);
-                require_capability('moodle/course:managegroups', $context);
-                $groupid = enrol_metagroup_create_new_group($course->id, $courseid);
-                $fields['customint2'] = $groupid;
-            }
-
-            $fields['customint1'] = $courseid;
-            $result = parent::add_instance($course, $fields);
-        }
-
-        enrol_metagroup_sync($course->id, $groupidnew);
+        enrol_metagroup_sync($course->id);
 
         return $result;
     }
@@ -273,7 +262,7 @@ class enrol_metagroup_plugin extends enrol_plugin {
         $groups = array(0 => get_string('none'));
         $courseid = $coursecontext->instanceid;
         if (has_capability('moodle/course:managegroups', $coursecontext)) {
-            $groups[ENROL_metagroup_CREATE_GROUP] = get_string('creategroup', 'enrol_metagroup');
+            $groups[ENROL_METAGROUP_CREATE_GROUP] = get_string('creategroup', 'enrol_metagroup');
         }
         foreach (groups_get_all_groups($courseid) as $group) {
             $groups[$group->id] = format_string($group->name, true, array('context' => $coursecontext));
@@ -292,33 +281,45 @@ class enrol_metagroup_plugin extends enrol_plugin {
     public function edit_instance_form($instance, MoodleQuickForm $mform, $coursecontext) {
         global $DB;
 
-        $groups = $this->get_group_options($coursecontext);
-        $existing = $DB->get_records('enrol', array('enrol' => 'metagroup', 'courseid' => $coursecontext->instanceid), '', 'customint1, id');
+        $groupschild = $this->get_group_options($coursecontext);
+        $existing = $DB->get_records('enrol', array('enrol' => 'metagroup', 
+                                                    'courseid' => $coursecontext->instanceid),'',  
+                                                    'customint1, customint2, customint3, id');
 
         $excludelist = array($coursecontext->instanceid);
+        /*
         foreach ($existing as $existinginstance) {
-            $excludelist[] = $existinginstance->customint1;
-        }
+            $excludelist[] = $existinginstance->customint2;
+        }*/
 
         $options = array(
             'requiredcapabilities' => array('enrol/metagroup:selectaslinked'),
             'multiple' => empty($instance->id),  // We only accept multiple values on creation.
             'exclude' => $excludelist
         );
+        
+        // Course Parent (origin).
         $mform->addElement('course', 'customint1', get_string('linkedcourse', 'enrol_metagroup'), $options);
         $mform->addRule('customint1', get_string('required'), 'required', null, 'client');
         if (!empty($instance->id)) {
             $mform->freeze('customint1');
         }
 
-        $mform->addElement('group', 'customint2', get_string('linkedgroup', 'enrol_metagroup'), $options);
+        // Group of course parent (origin).
+        $mform->addElement('text', 'customint2', get_string('linkedgroup', 'enrol_metagroup'));
         $mform->addRule('customint2', get_string('required'), 'required', null, 'client');
         if (!empty($instance->id)) {
             $mform->freeze('customint2');
         }
 
-        $mform->addElement('select', 'customint3', get_string('addgroup', 'enrol_metagroup'), $groups);
+        // Group of course child (destiny).
+        $mform->addElement('select', 'customint3', get_string('linkedgroup', 'enrol_metagroup'), $groupschild);
+        $mform->addRule('customint3', get_string('required'), 'required', null, 'client');
+        if (!empty($instance->id)) {
+            $mform->freeze('customint3');
+        }
 
+        // $mform->addElement('select', 'customint3', get_string('addgroupparent', 'enrol_metagroup'), $groupschild);
     }
 
     /**
