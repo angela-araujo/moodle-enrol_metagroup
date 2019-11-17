@@ -39,3 +39,7 @@ $string['pluginname_desc'] = 'Course metagroup link enrolment plugin synchronise
 $string['syncall'] = 'Synchronise all enrolled users';
 $string['syncall_desc'] = 'If enabled all enrolled users are synchronised even if they have no role in parent course, if disabled only users that have at least one synchronised role are enrolled in child course.';
 $string['privacy:metagroupdata:core_group'] = 'Enrol metagroup plugin can create a new group or use an existing group to add all the participants of the course linked.';
+
+$string['courseparent'] = 'Link course';
+$string['groupparent'] = 'Link group';
+$string['groupchild'] = 'Group destiny';

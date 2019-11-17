@@ -52,7 +52,7 @@ class enrol_metagroup_observer extends enrol_metagroup_handler {
             return true;
         }
 
-        self::sync_course_instances($event->courseid, $event->relateduserid);
+        self::sync_course_instances($event->courseid, $event->customint1, $event->relateduserid);
         return true;
     }
 
@@ -73,7 +73,7 @@ class enrol_metagroup_observer extends enrol_metagroup_handler {
             return true;
         }
 
-        self::sync_course_instances($event->courseid, $event->relateduserid);
+        self::sync_course_instances($event->courseid, $event->customint1, $event->relateduserid);
 
         return true;
     }

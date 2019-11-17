@@ -15,16 +15,27 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * metagroup link enrolment plugin version specification.
+ * Simple debugging class
  *
  * @package    enrol_metagroup
- * @copyright  2010 Petr Skoda {@link http://skodak.org}
+ * @copyright  2019 Angela
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
+namespace enrol_metagroup\local;
+
 defined('MOODLE_INTERNAL') || die();
 
-$plugin->component = 'enrol_metagroup'; // Full name of the plugin (used for diagnostics)
-$plugin->release   = '1.0';
-$plugin->version   = 2019111701;        // The current plugin version (Date: YYYYMMDDXX)
-$plugin->requires  = 2019051100;        // Requires this Moodle version
+class debugging {
+    public static function logit($message, $value) {
+
+        $file = fopen('mylog.log', 'a');
+
+        if ($file) {
+            fwrite($file, print_r($message, true));
+            fwrite($file, print_r($value, true));
+            fwrite($file, "\n");
+            fclose($file);
+        }
+    }
+}

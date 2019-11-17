@@ -39,3 +39,7 @@ $string['pluginname_desc'] = 'Plugin de inscrição link de grupo por curso sinc
 $string['syncall'] = 'Sincronizar todos os usuários inscritos';
 $string['syncall_desc'] = 'Se habilitado, todos os usuáris inscritos são sincrozinados mesmo se ele não tiverem papeis no curso pai, se desabilitado, apenas usuários com papel sincronizado são inscritos no curso filho.';
 $string['privacy:metagroupdata:core_group'] = 'Enrol metagroup plugin can create a new group or use an existing group to add all the participants of the course linked.';
+
+$string['courseparent'] = 'Link course';
+$string['groupparent'] = 'Link group';
+$string['groupchild'] = 'Group destiny';

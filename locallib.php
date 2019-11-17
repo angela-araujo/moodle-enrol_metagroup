@@ -1,4 +1,6 @@
 <?php
+use enrol_metagroup\local\debugging;
+
 // This file is part of Moodle - http://moodle.org/
 //
 // Moodle is free software: you can redistribute it and/or modify
@@ -97,11 +99,15 @@ class enrol_metagroup_handler {
         list($enabled, $params) = $DB->get_in_or_equal(explode(',', $CFG->enrol_plugins_enabled), SQL_PARAMS_NAMED, 'e');
         $params['userid'] = $userid;
         $params['parentcourse'] = $instance->customint1;
+        $params['parentgroup'] = $instance->customint2;
         $sql = "SELECT ue.*, e.status AS enrolstatus
                   FROM {user_enrolments} ue
-                  JOIN {enrol} e ON (e.id = ue.enrolid AND e.enrol <> 'metagroup' AND e.courseid = :parentcourse AND e.enrol $enabled)
+                  JOIN {enrol} e ON (e.id = ue.enrolid AND e.enrol <> 'enrol_metagroup' AND e.courseid = :parentcourse AND e.enrol $enabled)
+                  JOIN {groups_members} gm ON (gm.userid = ue.userid)
+                  JOIN {groups} g ON (g.id = gm.groupid AND g.courseid = e.courseid AND g.id = :parentgroup)
                  WHERE ue.userid = :userid";
         $parentues = $DB->get_records_sql($sql, $params);
+        
         // current enrolments for this instance
         $ue = $DB->get_record('user_enrolments', array('enrolid'=>$instance->id, 'userid'=>$userid));
 
@@ -175,8 +181,8 @@ class enrol_metagroup_handler {
             $ue->userid = $userid;
             $ue->enrolid = $instance->id;
             $ue->status = $parentstatus;
-            if ($instance->customint2) {
-                groups_add_member($instance->customint2, $userid, 'enrol_metagroup', $instance->id);
+            if ($instance->customint3) {
+                groups_add_member($instance->customint3, $userid, 'enrol_metagroup', $instance->id);
             }
         }
 
@@ -304,9 +310,10 @@ function enrol_metagroup_sync($courseid = NULL, $verbose = false) {
     $params['courseid'] = $courseid;
     
     // get members of group of parent course.
-    $groupmembers = 'AND u.id in ( SELECT pgm.userid FROM	mdl_groups pg 
-                        INNER JOIN mdl_groups_members pgm ON pgm.groupid = pg.id
-                        WHERE pg.courseid = e.customint1 and pg.id = e.customint2 ) ';
+    $groupmembers = 'AND u.id in ( SELECT pgm.userid 
+                                     FROM {group} pg 
+                                     JOIN {groups_members} pgm ON pgm.groupid = pg.id
+                                    WHERE pg.courseid = e.customint1 and pg.id = e.customint2 ) ';
     
     $sql = "SELECT pue.userid, e.id AS enrolid, MIN(pue.status + pe.status) AS status,
                       MIN(CASE WHEN (pue.status + pe.status = 0) THEN pue.timestart ELSE 9999999999 END) AS timestart,
@@ -353,6 +360,9 @@ function enrol_metagroup_sync($courseid = NULL, $verbose = false) {
         // Timestart 9999999999 is only possible when there are no active enrolments:
         $ue->timestart = ($ue->timestart == 9999999999) ? 0 : (int)$ue->timestart;
 
+        debugging::logit('ENROL_METAGROUP_SYNC \n ue : ', $ue);
+        debugging::logit(' instance : ', $instance);
+        
         $metagroup->enrol_user($instance, $ue->userid, null, $ue->timestart, $ue->timeend, $ue->status);
         
         groups_add_member($instance->customint3, $ue->userid, 'enrol_metagroup', $instance->id);
