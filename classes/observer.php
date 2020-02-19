@@ -48,13 +48,14 @@ class enrol_metagroup_observer extends enrol_metagroup_handler {
             // No more enrolments for disabled plugins.
             return true;
         }
-
+        debugging::logit(' [OBSERVER] event user_enrolment_created: ', $event);
+        
         if ($event->other['enrol'] === 'metagroup') {
             // Prevent circular dependencies - we can not sync metagroup enrolments recursively.
             return true;
         }
-        debugging::logit(' OBSERVER event\user_enrolment_created - $EVENT: ', $event);
-        self::sync_course_instances($event->courseid, $event->customint1, $event->customint2, $event->relateduserid);
+        
+        self::sync_course_instances($event->courseid, $event->relateduserid);
         return true;
     }
 
@@ -69,13 +70,14 @@ class enrol_metagroup_observer extends enrol_metagroup_handler {
             // This is slow, let enrol_metagroup_sync() deal with disabled plugin.
             return true;
         }
-
+        debugging::logit(' [OBSERVER] event user_enrolment_deleted: ', $event);
+        
         if ($event->other['enrol'] === 'metagroup') {
             // Prevent circular dependencies - we can not sync metagroup enrolments recursively.
             return true;
         }
-
-        self::sync_course_instances($event->courseid, $event->customint1, $event->customint2, $event->relateduserid);
+        
+        self::sync_course_instances($event->courseid, $event->relateduserid);
 
         return true;
     }
@@ -91,13 +93,14 @@ class enrol_metagroup_observer extends enrol_metagroup_handler {
             // No modifications if plugin disabled.
             return true;
         }
-
+        debugging::logit(' [OBSERVER] event user_enrolment_upadated: ', $event);
+        
         if ($event->other['enrol'] === 'metagroup') {
             // Prevent circular dependencies - we can not sync metagroup enrolments recursively.
             return true;
         }
-        debugging::logit(' OBSERVER event\user_enrolment_updated - $EVENT: ', $event);
-        self::sync_course_instances($event->courseid, $event->customint1, $event->customint2, $event->relateduserid);
+        
+        self::sync_course_instances($event->courseid, $event->relateduserid);
 
         return true;
     }
@@ -112,7 +115,8 @@ class enrol_metagroup_observer extends enrol_metagroup_handler {
         if (!enrol_is_enabled('metagroup')) {
             return true;
         }
-
+        debugging::logit(' [OBSERVER] event role_assigned: ', $event);
+        
         // Prevent circular dependencies - we can not sync metagroup roles recursively.
         if ($event->other['component'] === 'enrol_metagroup') {
             return true;
@@ -125,8 +129,8 @@ class enrol_metagroup_observer extends enrol_metagroup_handler {
         if ($parentcontext->contextlevel != CONTEXT_COURSE) {
             return true;
         }
-        debugging::logit(' OBSERVER event\role_assigned - $EVENT: ', $event);
-        self::sync_course_instances($parentcontext->instanceid, $event->customint1, $event->customint2, $event->relateduserid);
+        
+        self::sync_course_instances($parentcontext->instanceid, $event->relateduserid);
 
         return true;
     }
@@ -142,7 +146,8 @@ class enrol_metagroup_observer extends enrol_metagroup_handler {
             // All roles are removed via cron automatically.
             return true;
         }
-
+        debugging::logit(' [OBSERVER] event role_unanssigned: ', $event);
+        
         // Prevent circular dependencies - we can not sync metagroup roles recursively.
         if ($event->other['component'] === 'enrol_metagroup') {
             return true;
@@ -155,8 +160,8 @@ class enrol_metagroup_observer extends enrol_metagroup_handler {
         if ($parentcontext->contextlevel != CONTEXT_COURSE) {
             return true;
         }
-        debugging::logit(' OBSERVER event\role_unassigned - $EVENT: ', $event);
-        self::sync_course_instances($parentcontext->instanceid,  $event->customint1, $event->customint2, $event->relateduserid);
+        
+        self::sync_course_instances($parentcontext->instanceid, $event->relateduserid);
 
         return true;
     }
@@ -169,14 +174,14 @@ class enrol_metagroup_observer extends enrol_metagroup_handler {
      */
     public static function course_deleted(\core\event\course_deleted $event) {
         global $DB;
-
+debugging::logit(' [OBSERVER] event course_deleted: ', $event);
         if (!enrol_is_enabled('metagroup')) {
             // This is slow, let enrol_metagroup_sync() deal with disabled plugin.
             return true;
         }
 
         // Does anything want to sync with this parent?
-        if (!$enrols = $DB->get_records('enrol', array('customint1' => $event->objectid, 'customint2' => $event->custom2, 'enrol' => 'metagroup'),
+        if (!$enrols = $DB->get_records('enrol', array('customint1' => $event->objectid, 'enrol' => 'metagroup'),
                 'courseid ASC, id ASC')) {
             return true;
         }
@@ -215,7 +220,8 @@ class enrol_metagroup_observer extends enrol_metagroup_handler {
      */
     public static function enrol_instance_updated(\core\event\enrol_instance_updated $event) {
         global $DB;
-
+        debugging::logit(' [OBSERVER] event enrol_instance_upadate: ', $event);
+        
         if (!enrol_is_enabled('metagroup')) {
             // This is slow, let enrol_metagroup_sync() deal with disabled plugin.
             return true;
@@ -223,8 +229,8 @@ class enrol_metagroup_observer extends enrol_metagroup_handler {
 
         // Does anything want to sync with this parent?
         $affectedcourses = $DB->get_fieldset_sql('SELECT DISTINCT courseid FROM {enrol} '.
-                'WHERE customint1 = ? AND customint2 = ? AND enrol = ?',
-                array($event->courseid, $event->custom2, 'metagroup'));
+                'WHERE customint1 = ? AND enrol = ?',
+                array($event->courseid, 'metagroup'));
 
         foreach ($affectedcourses as $courseid) {
             enrol_metagroup_sync($courseid);
