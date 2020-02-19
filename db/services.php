@@ -15,16 +15,22 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * metagroup link enrolment plugin version specification.
+ * Metagroup enrolment external functions and service definitions.
  *
  * @package    enrol_metagroup
- * @copyright  2010 Petr Skoda {@link http://skodak.org}
+ * @category   external
+ * @copyright  2019 Angela de Araujo <angela@ccead.puc-rio.br>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @since      Moodle 3.1
  */
 
-defined('MOODLE_INTERNAL') || die();
-
-$plugin->component = 'enrol_metagroup'; // Full name of the plugin (used for diagnostics)
-$plugin->release   = '1.0';
-$plugin->version   = 2019111702;        // The current plugin version (Date: YYYYMMDDXX)
-$plugin->requires  = 2019051100;        // Requires this Moodle version
+$functions = array(
+        
+        'enrol_metagroup_get_groupids' => array(
+                'classname'   => 'enrol_metagroup_external',
+                'methodname'  => 'get_group_ids',
+                'description' => 'Return ids of group of course parent selected.',
+                'type'        => 'read',
+                'services'    => array(MOODLE_OFFICIAL_MOBILE_SERVICE),
+        ),
+);

@@ -22,6 +22,8 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
+use \enrol_metagroup\local\debugging;
+
 defined('MOODLE_INTERNAL') || die();
 
 require_once($CFG->dirroot.'/enrol/metagroup/locallib.php');
@@ -51,8 +53,8 @@ class enrol_metagroup_observer extends enrol_metagroup_handler {
             // Prevent circular dependencies - we can not sync metagroup enrolments recursively.
             return true;
         }
-
-        self::sync_course_instances($event->courseid, $event->customint1, $event->relateduserid);
+        debugging::logit(' OBSERVER event\user_enrolment_created - $EVENT: ', $event);
+        self::sync_course_instances($event->courseid, $event->customint1, $event->customint2, $event->relateduserid);
         return true;
     }
 
@@ -73,7 +75,7 @@ class enrol_metagroup_observer extends enrol_metagroup_handler {
             return true;
         }
 
-        self::sync_course_instances($event->courseid, $event->customint1, $event->relateduserid);
+        self::sync_course_instances($event->courseid, $event->customint1, $event->customint2, $event->relateduserid);
 
         return true;
     }
@@ -94,8 +96,8 @@ class enrol_metagroup_observer extends enrol_metagroup_handler {
             // Prevent circular dependencies - we can not sync metagroup enrolments recursively.
             return true;
         }
-
-        self::sync_course_instances($event->courseid, $event->relateduserid);
+        debugging::logit(' OBSERVER event\user_enrolment_updated - $EVENT: ', $event);
+        self::sync_course_instances($event->courseid, $event->customint1, $event->customint2, $event->relateduserid);
 
         return true;
     }
@@ -123,8 +125,8 @@ class enrol_metagroup_observer extends enrol_metagroup_handler {
         if ($parentcontext->contextlevel != CONTEXT_COURSE) {
             return true;
         }
-
-        self::sync_course_instances($parentcontext->instanceid, $event->relateduserid);
+        debugging::logit(' OBSERVER event\role_assigned - $EVENT: ', $event);
+        self::sync_course_instances($parentcontext->instanceid, $event->customint1, $event->customint2, $event->relateduserid);
 
         return true;
     }
@@ -153,8 +155,8 @@ class enrol_metagroup_observer extends enrol_metagroup_handler {
         if ($parentcontext->contextlevel != CONTEXT_COURSE) {
             return true;
         }
-
-        self::sync_course_instances($parentcontext->instanceid, $event->relateduserid);
+        debugging::logit(' OBSERVER event\role_unassigned - $EVENT: ', $event);
+        self::sync_course_instances($parentcontext->instanceid,  $event->customint1, $event->customint2, $event->relateduserid);
 
         return true;
     }
@@ -174,7 +176,7 @@ class enrol_metagroup_observer extends enrol_metagroup_handler {
         }
 
         // Does anything want to sync with this parent?
-        if (!$enrols = $DB->get_records('enrol', array('customint1' => $event->objectid, 'enrol' => 'metagroup'),
+        if (!$enrols = $DB->get_records('enrol', array('customint1' => $event->objectid, 'customint2' => $event->custom2, 'enrol' => 'metagroup'),
                 'courseid ASC, id ASC')) {
             return true;
         }
@@ -222,7 +224,7 @@ class enrol_metagroup_observer extends enrol_metagroup_handler {
         // Does anything want to sync with this parent?
         $affectedcourses = $DB->get_fieldset_sql('SELECT DISTINCT courseid FROM {enrol} '.
                 'WHERE customint1 = ? AND customint2 = ? AND enrol = ?',
-                array($event->courseid, 'metagroup'));
+                array($event->courseid, $event->custom2, 'metagroup'));
 
         foreach ($affectedcourses as $courseid) {
             enrol_metagroup_sync($courseid);

@@ -49,8 +49,13 @@ class enrol_metagroup_handler {
 
         static $preventrecursion = false;
 
+        debugging::logit('-----------------------------------', '');
+        debugging::logit('--------------locallib.php - sync_course_instances($parentcourseid, $parentgroupid, $childgroupid, $userid) ', '');
+        debugging::logit('--------------$parentcourseid: '. $parentcourseid . 
+                ' / $parentgroupid: ' . $parentgroupid . ' / $childgroupid: ' . $childgroupid . ' / $userid: ', $userid);
+        
         // does anything want to sync with this parent?
-        if (!$enrols = $DB->get_records('enrol', array('customint1'=>$parentcourseid, 'customint2'=>$parentgroupid, 'customint3'=>$childgroupid, 'enrol'=>'metagroup'), 'id ASC')) {
+        if (!$enrols = $DB->get_records('enrol', array('customint1' => $parentcourseid, 'customint2' => $parentgroupid, 'customint3' => $childgroupid, 'enrol'=>'metagroup'), 'id ASC')) {
             return;
         }
 
@@ -88,6 +93,12 @@ class enrol_metagroup_handler {
 
         $plugin = enrol_get_plugin('metagroup');
 
+        debugging::logit('-----------------------------------', '');
+        debugging::logit('--------------locallib.php - sync_with_parent_course(stdClass $instance, $userid) ', '');
+        debugging::logit('--------------$instance: ', $instance);
+        debugging::logit('--------------$userid: ', $userid);
+        
+
         if ($instance->customint1 == $instance->courseid) {
             // can not sync with self!!!
             return;
@@ -106,6 +117,9 @@ class enrol_metagroup_handler {
                   JOIN {groups_members} gm ON (gm.userid = ue.userid)
                   JOIN {groups} g ON (g.id = gm.groupid AND g.courseid = e.courseid AND g.id = :parentgroup)
                  WHERE ue.userid = :userid";
+        
+        debugging::logit('SYNC_WITH_PARENT_COURSE - SQL: ', $sql);
+        
         $parentues = $DB->get_records_sql($sql, $params);
         
         // current enrolments for this instance
@@ -165,9 +179,12 @@ class enrol_metagroup_handler {
                 }
             }
         }
-
+        
+        debugging::logit('*********Enrol user if not enrolled yet or fix status/timestart/timeend ******************************** ', $ue);
+        
         // Enrol user if not enrolled yet or fix status/timestart/timeend. Use the minimum timestart and maximum timeend found above.
         if ($ue) {
+            debugging::logit('[[[[[[[[[[[[[ UE ]]]]]]]]]]]', $ue);
             if ($parentstatus != $ue->status ||
                     ($parentstatus == ENROL_USER_ACTIVE && ($parenttimestart != $ue->timestart || $parenttimeend != $ue->timeend))) {
                 $plugin->update_user_enrol($instance, $userid, $parentstatus, $parenttimestart, $parenttimeend);
@@ -181,6 +198,7 @@ class enrol_metagroup_handler {
             $ue->userid = $userid;
             $ue->enrolid = $instance->id;
             $ue->status = $parentstatus;
+            debugging::logit('[[[[[[[[[[[[[ $instance->customint3 ]]]]]]]]]]]', $instance->customint3);
             if ($instance->customint3) {
                 groups_add_member($instance->customint3, $userid, 'enrol_metagroup', $instance->id);
             }
@@ -311,7 +329,7 @@ function enrol_metagroup_sync($courseid = NULL, $verbose = false) {
     
     // get members of group of parent course.
     $groupmembers = 'AND u.id in ( SELECT pgm.userid 
-                                     FROM {group} pg 
+                                     FROM {groups} pg 
                                      JOIN {groups_members} pgm ON pgm.groupid = pg.id
                                     WHERE pg.courseid = e.customint1 and pg.id = e.customint2 ) ';
     
@@ -330,6 +348,8 @@ function enrol_metagroup_sync($courseid = NULL, $verbose = false) {
     $params['enrolstatus'] = ENROL_INSTANCE_ENABLED;
 
     $rs = $DB->get_recordset_sql($sql, $params);
+    
+    
     foreach($rs as $ue) {
         if (!isset($instances[$ue->enrolid])) {
             $instances[$ue->enrolid] = $DB->get_record('enrol', array('id'=>$ue->enrolid));
@@ -360,13 +380,18 @@ function enrol_metagroup_sync($courseid = NULL, $verbose = false) {
         // Timestart 9999999999 is only possible when there are no active enrolments:
         $ue->timestart = ($ue->timestart == 9999999999) ? 0 : (int)$ue->timestart;
 
-        debugging::logit('ENROL_METAGROUP_SYNC \n ue : ', $ue);
-        debugging::logit(' instance : ', $instance);
-        
         $metagroup->enrol_user($instance, $ue->userid, null, $ue->timestart, $ue->timeend, $ue->status);
         
-        groups_add_member($instance->customint3, $ue->userid, 'enrol_metagroup', $instance->id);
+        debugging::logit(' [[[[[[[[[[[$instance]]]]] enrol_metagroup_sync($courseid = NULL, $verbose = false): ', $instance);
         
+        
+        $adicionou = groups_add_member($instance->customint3, $ue->userid, 'enrol_metagroup', $instance->id);
+        
+        debugging::logit(' groups_add_member($instance->customint3 = '. $instance->customint3 . 
+                ', $ue->userid = ' . $ue->userid . 
+                ', component = enrol_metagroup' .
+                ', $instance->id = ' . $instance->id .
+                '):::::: ', $adicionou );
         if ($verbose) {
             mtrace("  enrolling: $ue->userid ==> $instance->courseid");
         }
@@ -378,15 +403,22 @@ function enrol_metagroup_sync($courseid = NULL, $verbose = false) {
     $onecourse = $courseid ? "AND e.courseid = :courseid" : "";
     list($enabled, $params) = $DB->get_in_or_equal(explode(',', $CFG->enrol_plugins_enabled), SQL_PARAMS_NAMED, 'e');
     $params['courseid'] = $courseid;
+    $groupmembers = 'AND xpue.userid in ( SELECT pgm.userid
+                                     FROM {groups} pg
+                                     JOIN {groups_members} pgm ON pgm.groupid = pg.id
+                                    WHERE pg.courseid = xpe.customint1 and pg.id = xpe.customint2 ) ';
     $sql = "SELECT ue.*
               FROM {user_enrolments} ue
               JOIN {enrol} e ON (e.id = ue.enrolid AND e.enrol = 'metagroup' $onecourse)
          LEFT JOIN ({user_enrolments} xpue
                       JOIN {enrol} xpe ON (xpe.id = xpue.enrolid AND xpe.enrol <> 'metagroup' AND xpe.enrol $enabled)
                    ) ON (xpe.courseid = e.customint1 AND xpue.userid = ue.userid)
-             WHERE xpue.userid IS NULL";
+             WHERE xpue.userid IS NULL ";
     $rs = $DB->get_recordset_sql($sql, $params);
+    
+    debugging::logit(' unenrol as necessary SQL', $sql );
     foreach($rs as $ue) {
+        debugging::logit(' unenrol as necessary ', $ue );
         if (!isset($instances[$ue->enrolid])) {
             $instances[$ue->enrolid] = $DB->get_record('enrol', array('id'=>$ue->enrolid));
         }
@@ -633,7 +665,7 @@ function enrol_metagroup_sync($courseid = NULL, $verbose = false) {
     }
 
     // Finally sync groups.
-    $affectedusers = groups_sync_with_enrolment('metagroup', $courseid);
+    $affectedusers = groups_sync_with_enrolment('metagroup', $courseid, 'customint3');
     if ($verbose) {
         foreach ($affectedusers['removed'] as $gm) {
             mtrace("removing user from group: $gm->userid ==> $gm->courseid - $gm->groupname", 1);

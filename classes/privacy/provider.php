@@ -27,7 +27,7 @@ namespace enrol_metagroup\privacy;
 
 defined('MOODLE_INTERNAL') || die();
 
-use core_privacy\local\metagroupdata\collection;
+use core_privacy\local\metadata\collection;
 use core_privacy\local\request\approved_userlist;
 use core_privacy\local\request\contextlist;
 use core_privacy\local\request\approved_contextlist;
@@ -41,7 +41,7 @@ use core_privacy\local\request\userlist;
  */
 class provider implements
         // This plugin stores user data.
-        \core_privacy\local\metagroupdata\provider,
+        \core_privacy\local\metadata\provider,
 
         // This plugin contains user's enrolments.
         \core_privacy\local\request\plugin\provider,
@@ -55,9 +55,9 @@ class provider implements
      * @param   collection     $collection The initialised item collection to add items to.
      * @return  collection     A listing of user data stored through this system.
      */
-    public static function get_metagroupdata(collection $collection) : collection {
+    public static function get_metadata(collection $collection) : collection {
 
-        $collection->add_subsystem_link('core_group', [], 'privacy:metagroupdata:core_group');
+        $collection->add_subsystem_link('core_group', [], 'privacy:metadata:core_group');
         return $collection;
     }
 
