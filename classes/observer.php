@@ -48,8 +48,7 @@ class enrol_metagroup_observer extends enrol_metagroup_handler {
             // No more enrolments for disabled plugins.
             return true;
         }
-        debugging::logit(' [OBSERVER] event user_enrolment_created: ', $event);
-        
+
         if ($event->other['enrol'] === 'metagroup') {
             // Prevent circular dependencies - we can not sync metagroup enrolments recursively.
             return true;
@@ -70,7 +69,6 @@ class enrol_metagroup_observer extends enrol_metagroup_handler {
             // This is slow, let enrol_metagroup_sync() deal with disabled plugin.
             return true;
         }
-        debugging::logit(' [OBSERVER] event user_enrolment_deleted: ', $event);
         
         if ($event->other['enrol'] === 'metagroup') {
             // Prevent circular dependencies - we can not sync metagroup enrolments recursively.
@@ -93,7 +91,6 @@ class enrol_metagroup_observer extends enrol_metagroup_handler {
             // No modifications if plugin disabled.
             return true;
         }
-        debugging::logit(' [OBSERVER] event user_enrolment_upadated: ', $event);
         
         if ($event->other['enrol'] === 'metagroup') {
             // Prevent circular dependencies - we can not sync metagroup enrolments recursively.
@@ -115,7 +112,6 @@ class enrol_metagroup_observer extends enrol_metagroup_handler {
         if (!enrol_is_enabled('metagroup')) {
             return true;
         }
-        debugging::logit(' [OBSERVER] event role_assigned: ', $event);
         
         // Prevent circular dependencies - we can not sync metagroup roles recursively.
         if ($event->other['component'] === 'enrol_metagroup') {
@@ -146,7 +142,6 @@ class enrol_metagroup_observer extends enrol_metagroup_handler {
             // All roles are removed via cron automatically.
             return true;
         }
-        debugging::logit(' [OBSERVER] event role_unanssigned: ', $event);
         
         // Prevent circular dependencies - we can not sync metagroup roles recursively.
         if ($event->other['component'] === 'enrol_metagroup') {
@@ -174,7 +169,6 @@ class enrol_metagroup_observer extends enrol_metagroup_handler {
      */
     public static function course_deleted(\core\event\course_deleted $event) {
         global $DB;
-debugging::logit(' [OBSERVER] event course_deleted: ', $event);
         if (!enrol_is_enabled('metagroup')) {
             // This is slow, let enrol_metagroup_sync() deal with disabled plugin.
             return true;
@@ -220,7 +214,6 @@ debugging::logit(' [OBSERVER] event course_deleted: ', $event);
      */
     public static function enrol_instance_updated(\core\event\enrol_instance_updated $event) {
         global $DB;
-        debugging::logit(' [OBSERVER] event enrol_instance_upadate: ', $event);
         
         if (!enrol_is_enabled('metagroup')) {
             // This is slow, let enrol_metagroup_sync() deal with disabled plugin.

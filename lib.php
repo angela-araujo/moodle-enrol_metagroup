@@ -378,8 +378,6 @@ class enrol_metagroup_plugin extends enrol_plugin {
                     'id' => $thisinstance
             ] );
             
-            debugging::logit('instance: ', $instance);
-
             if (!$courseparent->visible and !has_capability('moodle/course:viewhiddencourses', $courseparentcontext)) {
                 $errors['customint1'] = get_string('error');
             } else if (!has_capability('enrol/metagroup:selectaslinked', $courseparentcontext)) {
