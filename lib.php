@@ -156,7 +156,7 @@ class enrol_metagroup_plugin extends enrol_plugin {
 
         $result = parent::update_instance($instance, $data);
 
-        enrol_metagroup_sync($instance->courseid, true);
+        enrol_metagroup_sync($instance->courseid);
 
         return $result;
     }
@@ -174,7 +174,7 @@ class enrol_metagroup_plugin extends enrol_plugin {
         parent::update_status($instance, $newstatus);
 
         require_once("$CFG->dirroot/enrol/metagroup/locallib.php");
-        enrol_metagroup_sync($instance->courseid, true);
+        enrol_metagroup_sync($instance->courseid);
     }
 
     /**

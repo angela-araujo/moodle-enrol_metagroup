@@ -374,16 +374,13 @@ function enrol_metagroup_sync($courseid = NULL, $verbose = false) {
     $onecourse = $courseid ? "AND e.courseid = :courseid" : "";
     list($enabled, $params) = $DB->get_in_or_equal(explode(',', $CFG->enrol_plugins_enabled), SQL_PARAMS_NAMED, 'e');
     $params['courseid'] = $courseid;
-    $groupmembers = 'AND xpue.userid in ( SELECT pgm.userid
-                                     FROM {groups} pg
-                                     JOIN {groups_members} pgm ON pgm.groupid = pg.id
-                                    WHERE pg.courseid = xpe.customint1 and pg.id = xpe.customint2 ) ';
+    
     $sql = "SELECT ue.*
               FROM {user_enrolments} ue
               JOIN {enrol} e ON (e.id = ue.enrolid AND e.enrol = 'metagroup' $onecourse)
          LEFT JOIN ({user_enrolments} xpue
                       JOIN {enrol} xpe ON (xpe.id = xpue.enrolid AND xpe.enrol <> 'metagroup' AND xpe.enrol $enabled)
-                   ) ON (xpe.courseid = e.customint1 AND xpue.userid = ue.userid)
+                   ) ON (xpe.courseid = e.customint1 AND xpue.userid = ue.userid )
              WHERE xpue.userid IS NULL ";
     $rs = $DB->get_recordset_sql($sql, $params);
     
