@@ -328,7 +328,7 @@ function enrol_metagroup_sync($courseid = NULL, $verbose = false) {
              WHERE ue.id IS NULL
              GROUP BY pue.userid, e.id";
     $params['enrolstatus'] = ENROL_INSTANCE_ENABLED;
-
+    
     $rs = $DB->get_recordset_sql($sql, $params);
     
     foreach($rs as $ue) {
@@ -375,12 +375,18 @@ function enrol_metagroup_sync($courseid = NULL, $verbose = false) {
     list($enabled, $params) = $DB->get_in_or_equal(explode(',', $CFG->enrol_plugins_enabled), SQL_PARAMS_NAMED, 'e');
     $params['courseid'] = $courseid;
     
+    // get members of group of parent course.
+    $groupmembers = 'AND xpue.userid in ( SELECT pgm.userid
+                                     FROM {groups} pg
+                                     JOIN {groups_members} pgm ON pgm.groupid = pg.id
+                                    WHERE pg.courseid = e.customint1 and pg.id = e.customint2 ) ';  
+    
     $sql = "SELECT ue.*
               FROM {user_enrolments} ue
               JOIN {enrol} e ON (e.id = ue.enrolid AND e.enrol = 'metagroup' $onecourse)
          LEFT JOIN ({user_enrolments} xpue
                       JOIN {enrol} xpe ON (xpe.id = xpue.enrolid AND xpe.enrol <> 'metagroup' AND xpe.enrol $enabled)
-                   ) ON (xpe.courseid = e.customint1 AND xpue.userid = ue.userid )
+                   ) ON (xpe.courseid = e.customint1 AND xpue.userid = ue.userid $groupmembers)
              WHERE xpue.userid IS NULL ";
     $rs = $DB->get_recordset_sql($sql, $params);
     

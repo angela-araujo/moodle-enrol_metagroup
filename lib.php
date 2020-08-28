@@ -316,6 +316,7 @@ class enrol_metagroup_plugin extends enrol_plugin {
 
         // Group of course parent (origin).
         $mform->addElement('text', 'customint2', get_string('groupparent', 'enrol_metagroup'));
+        $mform->setType('customint2', PARAM_INT);
         $mform->addRule('customint2', get_string('required'), 'required', null, 'client');
         /*if (!empty($instance->id)) {
             $mform->freeze('customint2');
@@ -342,7 +343,7 @@ class enrol_metagroup_plugin extends enrol_plugin {
      */
     public function edit_instance_validation($data, $files, $instance, $context) {
         
-        //TODO: Melhor funcao de validacao (angela)
+        //TODO: Melhorar funcao de validacao (angela)
         global $DB;
         
         $errors = array();
